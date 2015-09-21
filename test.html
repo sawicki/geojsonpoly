@@ -1,56 +1,90 @@
-<html>
-<body>
-
-<form id="jsonFile" name="jsonFile" enctype="multipart/form-data" method="post">
-
-  <fieldset>
-    <h2>GeoJSON File</h2>
-     <input type='file' id='fileinput'>
-     <input type='button' id='btnLoad' value='Load' onclick='loadFile();'>
-  </fieldset>
-</form>
-<p id="out1">Output Area 1</p>
-<p id="out2">Output Area 2</p>
-
-<script type="text/javascript">
-
-  function loadFile() {
-    var input, file, fr;
-
-    if (typeof window.FileReader !== 'function') {
-      alert("The file API isn't supported on this browser yet.");
-      return;
-    }
-
-    input = document.getElementById('fileinput');
-    if (!input) {
-      alert("Um, couldn't find the fileinput element.");
-    }
-    else if (!input.files) {
-      alert("This browser doesn't seem to support the `files` property of file inputs.");
-    }
-    else if (!input.files[0]) {
-      alert("Please select a file before clicking 'Load'");
-    }
-    else {
-      file = input.files[0];
-      fr = new FileReader();
-      fr.onload = receivedText;
-      fr.readAsText(file);
-    }
-
-    function receivedText(e) {
-      lines = e.target.result;
-      var geoJSON = JSON.parse(lines);
-	  var polyCoord = geoJSON.features[0].geometry.coordinates;
-	  var namelsad = geoJSON.features[0].properties.NAMELSAD;
-	 
-	  var outstring = namelsad + "<br>" +  "Number of Polys = " + polyCoord.length
-	  document.getElementById("out").innerHTML = outstring
-	
-    }
-  }
-</script>
-
-</body>
+<html>
+<body>
+
+<form id="jsonFile" name="jsonFile" enctype="multipart/form-data" method="post">
+
+  <fieldset>
+    <h2>GeoJSON File</h2>
+     <input type='file' id='fileinput'>
+     <input type='button' id='btnLoad' value='Load' onclick='procGeoJSON();'>
+  </fieldset>
+</form>
+<p id="out1">Output Area 1</p>
+<pre>
+<p id="out2">Output Area 2</p>
+</pre>
+<script type="text/javascript">
+var geoJSON;
+
+  function procGeoJSON() {
+    var input, file, fr;
+	var bp = {lon:",{lon:'",latPre:",lat:'", latPost:"'}"}  // boilerplate for lat lon strings
+
+    if (typeof window.FileReader !== 'function') {
+      alert("The file API isn't supported on this browser yet.");
+      return;
+    }
+
+    input = document.getElementById('fileinput');
+    if (!input) {
+      alert("Um, couldn't find the fileinput element.");
+    }
+    else if (!input.files) {
+      alert("This browser doesn't seem to support the `files` property of file inputs.");
+    }
+    else if (!input.files[0]) {
+      alert("Please select a file before clicking 'Load'");
+    }
+    else {
+      file = input.files[0];
+      fr = new FileReader();
+      fr.onload = receivedText;
+      fr.readAsText(file);
+	}
+
+    function receivedText(e) {
+      lines = e.target.result;
+      geoJSON = JSON.parse(lines);
+	  var polyCoord = geoJSON.features[0].geometry.coordinates;
+	  var namelsad = geoJSON.features[0].properties.NAMELSAD;
+	 
+	  var outstring = namelsad + "<br>" +  "Number of Polys = " + polyCoord.length;
+	  document.getElementById("out1").innerHTML = outstring;
+	  jsonConvert();
+	
+    }
+	function jsonConvert() {
+		var i, numPoly, polyCoord,namelsad,outstring,curPoly;
+		polyCoord = geoJSON.features[0].geometry.coordinates;
+		namelsad = geoJSON.features[0].properties.NAMELSAD;
+		numPoly = polyCoord.length;
+		outstring = namelsad + "<br>" +  "Number of Polys = " + polyCoord.length;
+		document.getElementById("out1").innerHTML = outstring; 
+		outstring = ""
+		for (i=0; i < numPoly;i++){
+			multPolys = polyCoord[i];
+		    outstring = outstring + "Poly # "+ ('    ' + (i+1)).slice(-2)+       "  " + (multPolys.length - 1) + "<br>";
+			procPoly(polyCoord[i]);
+		}
+		document.getElementById("out2").innerHTML = outstring;
+	} 
+	function procPoly(multPolys){
+		var point, curPoly, lon, lat;
+	for(var i=0;i<multPolys.length;i++){
+		curPoly = multPolys[i];
+		for (var n=0; n<curPoly.length;n++){
+			point = curPoly[n];
+			lon = point[0];
+			lat = point[1];
+			console.log("lon = ", lon, "  lat = ",lat);
+		}
+		
+	
+	}
+	
+	}
+  }
+</script>
+
+</body>
 </html>
