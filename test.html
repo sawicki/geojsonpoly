@@ -1,4 +1,18 @@
 <html>
+<head>
+<style>
+body {
+    background-color: ghostwhite;
+}
+p{ margin: 10px;
+padding:5px;
+}
+
+h1 {
+    
+} 
+</style>
+</head>
 <body>
 
 <form id="jsonFile" name="jsonFile" enctype="multipart/form-data" method="post">
@@ -6,16 +20,21 @@
   <fieldset>
     <h2>GeoJSON File</h2>
      <input type='file' id='fileinput'>
-     <input type='button' id='btnLoad' value='Load' onclick='loadFile();'>
+     <input type='button' id='btnLoad' value='Load' onclick='procGeoJSON();'>
   </fieldset>
 </form>
-<p id="out1">Output Area 1</p>
-<p id="out2">Output Area 2</p>
-
+<p id="out1"></p>
+<pre>
+<p id="out2"></p>
+<p id="out3"></p>
+</pre>
 <script type="text/javascript">
+var geoJSON;
+var CR = "<br>";
 
-  function loadFile() {
+  function procGeoJSON() {
     var input, file, fr;
+	var bp = {lon:",{lon:'",latPre:",lat:'", latPost:"'}"}  // boilerplate for lat lon strings
 
     if (typeof window.FileReader !== 'function') {
       alert("The file API isn't supported on this browser yet.");
@@ -37,18 +56,87 @@
       fr = new FileReader();
       fr.onload = receivedText;
       fr.readAsText(file);
-    }
+	}
 
     function receivedText(e) {
-      lines = e.target.result;
-      var geoJSON = JSON.parse(lines);
-	  var polyCoord = geoJSON.features[0].geometry.coordinates;
-	  var namelsad = geoJSON.features[0].properties.NAMELSAD;
-	 
-	  var outstring = namelsad + "<br>" +  "Number of Polys = " + polyCoord.length
-	  document.getElementById("out").innerHTML = outstring
+		var  numPoly, multiPoly,namelsad,outstring,curPoly, namenb,holeName;
+				
+		lines = e.target.result;
+		geoJSON = JSON.parse(lines);
+		multiPoly = geoJSON.features[0].geometry.coordinates;
+		namelsad = geoJSON.features[0].properties.NAMELSAD;
+		namenb = namelsad.replace(/ /g, '')
+
+		var outstring = namelsad + "<br>" +  "Number of Polys = " + multiPoly.length;
+		document.getElementById("out1").innerHTML = outstring;
+		//jsonConvert();
+		multiPoly = geoJSON.features[0].geometry.coordinates; 
+		
+		// *********  calculate and output name of geo and number of polys
+		namelsad = geoJSON.features[0].properties.NAMELSAD;
+		numPoly = multiPoly.length;    											
+		outstring = namelsad + "<br>" +  "Number of Polys = " + numPoly;
+		document.getElementById("out1").innerHTML = outstring + CR; 
+		
+		
+		// ********  calculate how many holes in each poly
+		outstring = ""
+		for (i=0; i < numPoly;i++){
+			multPolys = multiPoly[i];
+		    outstring +=  "Poly # "+ ('    ' + (i+1)).slice(-2)+       "  " + (multPolys.length - 1) + CR;
+		}
+		document.getElementById("out2").innerHTML = outstring + CR +CR;
+		
+		//********************************* Build text string for each poly
+			//break multiPoly into polys (outer ring plus inner rings)
+		outstring = "";
+		for (var i = 0; i < numPoly; i++){
+			curPoly = multiPoly[i];
+			
+			// turn out ring into output string
+			outstring += geoString(curPoly[0],i);
+			outstring += ('AddRaidPolygon(raid_mapLayer, '+"V"+namenb+"_"+i+',"#"," '+namelsad+'");') + CR + CR;
+			//document.getElementById("out3").innerHTML = outstring;
+			
+			// work on inner rings
+			for (var n = 1; n < curPoly.length; n++){
+			curPoly = multiPoly[i];
+			// turn inner ring into output string
+			holeNumber = "_hole_"+n;
+			outstring += geoString(curPoly[0],i,holeNumber);
+			outstring += ('AddRaidPolygon(raid_mapLayer, V'+namenb+"_"+i+holeNumber + ',"#"," '+namelsad+ " hole " + n +'");') + CR + CR;
+			outstring += "//innerBoundaries" + CR ;// +  "generateholes(mro_Map, raid_mapLayer);" + CR + CR;
+			document.getElementById("out3").innerHTML = outstring + CR; 
+			} 
+		}
+		function geoString(poly,polynumb,holeNumber) {
+		var curString;
+		holeNumber = holeNumber||""
+		curString = "var V"+ namenb + "_" + polynumb +holeNumber+ " = [" +  " ";
+		for (var i = 0; i < poly.length; i++){
+			lon = poly[i][0];
+			lat = poly[i][1];
+			if (i==0) {
+				curString += "{lon:'" + lon + "',lat:'"+ lat + "'}";
+			} 
+			else { 
+				curString += ",{lon:'" + lon + "',lat:'"+ lat + "'}";
+			}
+		
+		}
+		curString += "];"
 	
+		return curString + CR;
+		}
     }
+	
+	
+	
+	
+	
+	
+	
+	
   }
 </script>
 
